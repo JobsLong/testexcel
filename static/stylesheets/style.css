@@ -435,9 +435,9 @@ body.login2 {
 .navbar .container-fluid.top-bar .nav > li.sheet > a,
           .navbar .container-fluid.top-bar .nav > li.user > a {
             color: #999999; }
-.navbar .container-fluid.top-bar .nav > li.user > a {
+/*.navbar .container-fluid.top-bar .nav > li.user > a {
     padding: 5px 10px 6px;
-}
+}*/
           .navbar .container-fluid.top-bar .nav > li.user img {
             border-radius: 50%;
             margin-right: 8px; }
