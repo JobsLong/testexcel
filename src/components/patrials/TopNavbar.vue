@@ -40,8 +40,9 @@
 	            </ul>
 	        </li>
 	        <!-- Testcase Dropdown -->
-	        <li v-if="selectedSheet" class="dropdown sheet"><a data-toggle="modal" href="#createTestCaseModal">
-	                新建测试用例</a>
+	        <li v-if="selectedSheet" class="dropdown sheet">
+	        	<a data-toggle="modal" href="#createTestCaseModal" @click="openCreateTestCaseModal()">
+	                新建功能说明</a>
 	        </li>
 	        <!-- Testgroup Dropdown -->
 	        <li v-if="selectedProject != null && selectedTestGroups.length == 0" class="dropdown sheet">
@@ -143,7 +144,7 @@
 	            <div class="modal-header">
 	                <button aria-hidden="true" class="close" data-dismiss="modal" type="button">×</button>
 	                <h4 class="modal-title">
-	                    New Test Case
+	                    新建功能
 	                </h4>
 	            </div>
 	            <div class="modal-body">
@@ -152,7 +153,7 @@
 	                        <div class="form-group">
 	                            <label class="control-label col-md-2" for="code">编码号</label>
 	                            <div class="col-md-7">
-	                                <input class="form-control" id="code" placeholder="GJYH-001" value="GJYH-001" v-model="newTestCase.code" type="text">
+	                                <input class="form-control" id="code" v-model="newTestCase.code" type="text">
 	                            </div>
 	                        </div>
 	                    </fieldset>
@@ -202,10 +203,10 @@
 
 	export default {
 		props: {
-	  	store: null,
-	  	testcases: [],
-	  	testgroups: []
-	  },
+		  	store: null,
+		  	testcases: [],
+		  	testgroups: []
+		},
 		data () {
 			return {
 				projects: {},
@@ -232,7 +233,7 @@
 		},
 		components: {
 			messageBox,
-    	personalCenter,
+    		personalCenter,
 		},
 		ready() {
 		  const self = this
@@ -260,6 +261,21 @@
 			}
 		},
 		methods: {
+			openCreateTestCaseModal () {
+				this.newTestCase.code = this.generateCode(this.selectedSheet.name)
+			},
+			generateCode (name) {
+				var pinyinlite = require('pinyinlite')
+
+				var words = pinyinlite(name)
+				var code = ''
+				_.each(words, function (word) {
+					code += word[0].toUpperCase().charAt(0)
+				})
+
+
+				return code + '_' + (this.testcases.length + 1)
+			},
 			storeProject() {
 			  if (this.newProjet.name === '') return
 
@@ -283,7 +299,7 @@
 			  if (_.isUndefined(this.selectedProject.sheets)) {
 			    this.selectedSheet = null
 			    this.selectedTestGroups = []
-			    this.testcases = null
+			    this.testcases = []
 			    return
 			  }
 
@@ -308,7 +324,7 @@
 			  }
 
 			  if (_.isUndefined(this.selectedSheet.testcases)) {
-			    this.testcases = null
+			    this.testcases = []
 			  } else {
 			    this.testcases = this.selectedSheet.testcases
 			  }
@@ -316,8 +332,7 @@
 			storeTestGroup() {
 			  if (this.newTestGroup.name === '') return
 
-			  const testgroupsRef = this.store.child(`projects/${this.selectedProject.key}/
-			    sheets/${this.selectedSheet.key}/testgroups`)
+			  const testgroupsRef = this.store.child(`projects/${this.selectedProject.key}/sheets/${this.selectedSheet.key}/testgroups`)
 
 			  testgroupsRef.push(this.newTestGroup)
 
@@ -335,8 +350,7 @@
 			  })
 			},
 			storeTestCase() {
-			  const testcasesRef = this.store.child(`projects/${this.selectedProject.key}/
-			    sheets/${this.selectedSheet.key}/testcases`)
+			  const testcasesRef = this.store.child(`projects/${this.selectedProject.key}/sheets/${this.selectedSheet.key}/testcases`)
 
 			  testcasesRef.push(this.newTestCase)
 

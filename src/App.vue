@@ -2,7 +2,7 @@
   <top-navbar
     :store.sync="store" 
     :testcases.sync="testcases" 
-    :testgroup.sync="testgroups">
+    :testgroups.sync="testgroups">
   </top-navbar>
 
   <div class="container-fluid main-content">
@@ -10,9 +10,10 @@
       <img src="http://7xrkvy.dl1.z0.glb.clouddn.com/16-7-6/54141698.jpg" alt="Loading...">
     </div>
     <excel-list 
+      v-if="testcases"
       :store="store" 
       :testcases="testcases" 
-      :testgroup="testgroups">
+      :testgroups="testgroups">
     </excel-list>
   </div>
 </template>

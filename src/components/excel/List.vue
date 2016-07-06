@@ -40,7 +40,7 @@
                         </template>
                     </tr>
                     </thead>
-                    <tbody v-if="testcases">
+                    <tbody>
                         <tr v-for="(key, testcase) in testcases">
                             <td>
                                 {{testcase.code}}
