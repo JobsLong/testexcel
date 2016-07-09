@@ -35,7 +35,7 @@
 	        <li v-if="selectedSheet" class="dropdown sheet"><a data-toggle="dropdown" class="dropdown-toggle" href="#">
 	                {{ selectedSheet.name }} <b class="caret"></b></a>
 	            <ul class="dropdown-menu">
-	                <li v-for="(key, sheet) in selectedProject.sheets" v-if="sheet.key != selectedSheet.key"><a href="#" @click="selectSheet(sheet)"> {{ sheet.name }}</a></li>
+	                <li v-for="(key, sheet) in selectedProject.sheets" v-if="sheet.key != selectedSheet.key"><a href="#" @click="selectSheet(key, sheet)"> {{ sheet.name }}</a></li>
 	                <li><a data-toggle="modal" href="#createSheetModal">新建 Sheet</a></li>
 	            </ul>
 	        </li>
@@ -45,17 +45,17 @@
 	                新建功能说明</a>
 	        </li>
 	        <!-- Testgroup Dropdown -->
-	        <li v-if="selectedProject != null && selectedTestGroups.length == 0" class="dropdown sheet">
+	        <!-- <li v-if="selectedProject != null && selectedTestGroups.length == 0" class="dropdown sheet">
 	            <a data-toggle="modal" href="#createTestGroupModal">新建测试组</a>
 	        </li>
 	        <li v-if="selectedSheet != null && selectedTestGroups.length != 0" class="dropdown sheet"><a data-toggle="dropdown" class="dropdown-toggle" href="#">
 	                {{ selectedTestGroups[0].name }} <b class="caret"></b></a>
 	            <ul class="dropdown-menu">
-	                <li v-for="(key, testgroup) in selectedSheet.testgroups" v-if="testgroup.key != selectedTestGroups[0].key"><a href="#" @click="selectTestGroup(testgroup)"> {{ testgroup.name }}</a></li>
+	                <li v-for="(key, testgroup) in selectedSheet.testgroups" v-if="testgroup.key != selectedTestGroups[0].key"><a href="#" @click="selectTestGroup(key, testgroup)"> {{ testgroup.name }}</a></li>
 	                <li><a href="#" @click="showAllTestGroup">All Test Group</a></li>
 	                <li><a data-toggle="modal" href="#createTestGroupModal">新建测试组</a></li>
 	            </ul>
-	        </li>
+	        </li> -->
 	    </ul>
 	  </div>
 	</div>
@@ -106,7 +106,7 @@
 	                </form>
 	            </div>
 	            <div class="modal-footer">
-	                <button class="btn btn-primary" type="button" @click="storeSheet">Save</button><button class="btn btn-default-outline" data-dismiss="modal" type="button">Close</button>
+	                <button class="btn btn-primary" type="button" @click="storeSheet()">Save</button><button class="btn btn-default-outline" data-dismiss="modal" type="button">Close</button>
 	            </div>
 	        </div>
 	    </div>
@@ -160,13 +160,13 @@
 	                    <div class="form-group">
 	                        <label class="control-label col-md-2">主模块</label>
 	                        <div class="col-md-7">
-	                            <input autocomplete="off" class="form-control states typeahead tt-query" dir="auto" placeholder="主模块名称" spellcheck="false" type="text" v-model="newTestCase.parent_module_name">
+	                            <input autocomplete="off" class="form-control parent typeahead tt-query" dir="auto" placeholder="主模块名称" spellcheck="false" type="text" v-model="newTestCase.parent_module_name">
 	                        </div>
 	                    </div>
 	                    <div class="form-group">
 	                        <label class="control-label col-md-2">子模块</label>
 	                        <div class="col-md-7">
-	                            <input autocomplete="off" class="form-control countries typeahead tt-query" dir="auto" placeholder="子模块名称" spellcheck="false" type="text" v-model="newTestCase.child_module_name">
+	                            <input autocomplete="off" class="form-control child typeahead tt-query" dir="auto" placeholder="子模块名称" spellcheck="false" type="text" v-model="newTestCase.child_module_name">
 	                        </div>
 	                    </div>
 	                    <div class="form-group">
@@ -209,7 +209,7 @@
 		},
 		data () {
 			return {
-				projects: {},
+				projects: [],
 				selectedProject: null,
 				newProjet: {
 				  name: ''
@@ -228,12 +228,13 @@
 				  desc: '',
 				  steps: '',
 				  expected: ''
-				}
+				},
+				selectedTestGroups: []
 			}
 		},
 		components: {
 			messageBox,
-    		personalCenter,
+    	personalCenter,
 		},
 		ready() {
 		  const self = this
@@ -251,18 +252,49 @@
 			projectsLoaded (projects) {
 		    if (_.isNull(projects)) return
 
-		   	this.projects = projects
+		    var self = this
+		    this.projects = []
+		    _.each(_.pairs(projects), function (item) {
+		    	var project = item[1]
+		    	project.key = item[0]
+		    	self.projects.push(project)
+		    })
 
-		    const first = _.pairs(this.projects)[0]
-		    this.selectedProject = first[1]
-		    this.selectedProject.key = first[0]
-
-		    this.selectProject(this.selectedProject)
+		    this.selectProject(this.getFirstItem(projects))
 			}
 		},
 		methods: {
+			getFirstItem (items) {
+				if(_.isArray(items)) {
+					return _.first(items)
+				}
+
+				var item = {}
+				const first = _.first(_.pairs(items))
+				item.key = first[0]
+				item = first[1]
+				return item
+			},
+			getLastItem (items) {
+				if(_.isArray(items)) {
+					return _.last(items)
+				}
+
+				var item = {}
+				const last = _.last(_.pairs(items))
+				item = last[1]
+				item.key = last[0]
+
+				return item
+			},
 			openCreateTestCaseModal () {
+				// clear
 				this.newTestCase.code = this.generateCode(this.selectedSheet.name)
+				// this.newTestCase.parent_module_name = ''
+				this.newTestCase.child_module_name = ''
+				this.newTestCase.desc = ''
+				this.newTestCase.steps = ''
+				this.newTestCase.expected = ''
 			},
 			generateCode (name) {
 				var pinyinlite = require('pinyinlite')
@@ -273,8 +305,7 @@
 					code += word[0].toUpperCase().charAt(0)
 				})
 
-
-				return code + '_' + (this.testcases.length + 1)
+				return code + '_' + (_.keys(this.testcases).length + 1)
 			},
 			storeProject() {
 			  if (this.newProjet.name === '') return
@@ -283,17 +314,29 @@
 			  projectsRef.push(this.newProjet)
 
 			  $('#createProjectModal').modal('hide')
+
+			  this.selectProject(this.getLastItem(this.projects))
 			},
 			storeSheet() {
 			  if (this.newSheet.name === '') return
 
+			  var selectedProject = this.selectedProject
 			  const sheetsRef = this.store.child(`projects/${this.selectedProject.key}/sheets`)
 			  sheetsRef.push(this.newSheet)
 
 			  $('#createSheetModal').modal('hide')
+
+			  this.selectProject(selectedProject)
+
+			  var key = key
+			  _.extend(this.newSheet, {key: key})
+			  _.extend(this.selectedProject.sheets, {key: this.newSheet})
+			  
+			  var last = this.getLastItem(this.selectedProject.sheets)
+			  this.selectSheet(last.key, last)
 			},
 			selectProject(project) {
-			  this.selectedProject = project
+				this.selectedProject = project
 
 			  // select first sheet
 			  if (_.isUndefined(this.selectedProject.sheets)) {
@@ -303,31 +346,58 @@
 			    return
 			  }
 
-			  const first = _.pairs(this.selectedProject.sheets)[0]
-			  this.selectedSheet = first[1]
-			  this.selectedSheet.key = first[0]
+			  var first = this.getFirstItem(this.selectedProject.sheets)
+			  this.selectSheet(first.key, first)
 
-			  this.selectSheet(this.selectedSheet)
+			  _.map(_.pairs(this.selectedProject.sheets), function (item) {
+			  	var sheet = item[1]
+			  	sheet.key = item[0]
+			  	item = sheet
+			  })
 			},
-			selectSheet(sheet) {
-			  this.selectedSheet = sheet
+			selectSheet(key, sheet) {
+				this.selectedSheet = sheet
+				this.selectedSheet.key = key
 
 			  // select first sheet
 			  if (this.selectedSheet === null || _.isUndefined(this.selectedSheet.testgroups)) {
 			    this.selectedTestGroups = []
 			  } else {
-			    const first = _.pairs(this.selectedSheet.testgroups)[0]
-			    const selectedTestGroup = first[1]
-			    selectedTestGroup.key = first[0]
-
-			    this.selectTestGroup(selectedTestGroup)
+			    this.selectTestGroup(this.getFirstItem(this.selectedSheet.testgroups))
 			  }
 
 			  if (_.isUndefined(this.selectedSheet.testcases)) {
 			    this.testcases = []
 			  } else {
 			    this.testcases = this.selectedSheet.testcases
+
+			    this.buildAutoComplete(this.testcases)
 			  }
+			},
+			buildAutoComplete (testcases) {
+				var parent = []
+				var child = []
+
+				_.each(testcases, function (testcase) {
+					parent.push(testcase.parent_module_name)
+					child.push(testcase.child_module_name)
+				})
+
+				parent = _.uniq(parent)
+				child = _.uniq(child)
+
+				// build for auto complete
+		    if ($('.typeahead').length) {
+		      $(".parent.typeahead").typeahead({
+		        name: "parent",
+		        local: parent
+		      })
+
+		      $(".child.typeahead").typeahead({
+		        name: "child",
+		        local: child
+		      })
+		    }
 			},
 			storeTestGroup() {
 			  if (this.newTestGroup.name === '') return
@@ -338,7 +408,8 @@
 
 			  $('#createTestGroupModal').modal('hide')
 			},
-			selectTestGroup(testgroup) {
+			selectTestGroup(key, testgroup) {
+				testgroup.key = key
 			  this.selectedTestGroups = []
 			  this.selectedTestGroups.push(testgroup)
 			},
@@ -352,9 +423,14 @@
 			storeTestCase() {
 			  const testcasesRef = this.store.child(`projects/${this.selectedProject.key}/sheets/${this.selectedSheet.key}/testcases`)
 
+			  var selectedProject = this.selectedProject
+			  var selectedSheet = this.selectedSheet
 			  testcasesRef.push(this.newTestCase)
 
 			  $('#createTestCaseModal').modal('hide')
+
+			  this.selectProject(selectedProject)
+			  this.selectSheet(selectedSheet.key, selectedSheet)
 			}
 		}
 	}
