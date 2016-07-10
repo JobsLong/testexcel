@@ -408,6 +408,12 @@
 			  this.selectSheet(this.getLastItem(this.selectedProject.sheets))			  	
 			},
 			storeTestCase() {
+				if(this.newTestCase.parent_module_name === '' 
+					|| this.newTestCase.child_module_name === ''
+					|| this.newTestCase.desc === '') {
+					return 
+				}
+
 			  const testcasesRef = this.store.child(`projects/${this.selectedProject.key}/sheets/${this.selectedSheet.key}/testcases`)
 
 			  testcasesRef.push(this.newTestCase)

@@ -2,6 +2,12 @@
 
 > Test + Excel = Magic tool.
 
+## Todo
+
+- Sheet 删除操作
+- 用例说明编辑、删除操作
+- 用户操作记录
+
 ## Build Setup
 
 ``` bash
