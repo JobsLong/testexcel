@@ -329,20 +329,23 @@
 				this.selectedProject = project
 
 			  // select first sheet
-			  if (_.isUndefined(this.selectedProject.sheets)) {
+			  if (_.isNull(this.selectedProject.sheets) || 
+			  		_.isUndefined(this.selectedProject.sheets)) {
+			  	this.selectedProject.sheets = []
 			    this.selectedSheet = null
 			    this.selectedTestGroups = []
 			    this.testcases = []
 			    return
 			  }
 
-			  this.selectedProject.sheets = _.isNull(this.selectedProject.sheets) ?
-			  	[] : this.convertObject2Array(this.selectedProject.sheets) 
+			  this.selectedProject.sheets = this.convertObject2Array(this.selectedProject.sheets)
 
 			  // when switch project, auto switch to first sheet
 			  this.selectSheet(this.getFirstItem(this.selectedProject.sheets))
 			},
 			selectSheet(sheet) {
+				if(_.isUndefined(sheet)) return
+
 				this.selectedSheet = sheet
 
 			  // select first sheet
