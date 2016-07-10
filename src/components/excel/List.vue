@@ -10,11 +10,11 @@
                         <th rowspan="2">
                            编号
                         </th>
-                        <th rowspan="2" colspan="2">
+                        <th rowspan="2" colspan="2" style="min-width:200px;">
                             功能模块
                         </th>
-                        <th rowspan="2">
-                            测试点描述
+                        <th rowspan="2" style="min-width:200px;">
+                            功能点描述
                         </th>
                         <th rowspan="2">
                             操作步骤
