@@ -14,35 +14,40 @@
 	    </div>
 	    <ul class="nav navbar-nav">
 	        <!-- Project Sheet -->
-	        <li v-if="selectedProject == null" class="dropdown project"><a data-toggle="modal" href="#createProjectModal">
-	            <i class="fa fa-folder-open"></i> 新建项目</a>
+	        <li v-if="selectedProject == null" class="dropdown project">
+	        	<a data-toggle="modal" href="#createProjectModal" @click="openCreateProjectModal()">
+	            <i class="fa fa-folder-open"></i> 新建项目
+	          </a>
 	        </li>
-	        <li v-if="selectedProject != null" class="dropdown project"><a data-toggle="dropdown" class="dropdown-toggle" href="#">
-	            <i class="fa fa-folder-open"></i> {{ selectedProject.name }}<b class="caret"></b></a>
-	            <ul class="dropdown-menu">
-	                <li v-for="(key, project) in projects" v-if="project.key != selectedProject.key">
-	                    <a href="#" @click="selectProject(project)">{{project.name}}</a>
-	                </li>
-	                <li><a data-toggle="modal" href="#createProjectModal">
-	                    新建项目</a>
-	                </li>
-	            </ul>
+	        <li v-if="selectedProject != null" class="dropdown project">
+	        	<a data-toggle="dropdown" class="dropdown-toggle" href="#">
+	            <i class="fa fa-folder-open"></i> {{ selectedProject.name }}<b class="caret"></b>
+	          </a>
+            <ul class="dropdown-menu">
+              <li v-for="project in projects" v-if="project.key != selectedProject.key">
+                  <a href="#" @click="selectProject(project)">{{project.name}}</a>
+              </li>
+              <li>
+              	<a data-toggle="modal" href="#createProjectModal"  @click="openCreateProjectModal()">
+                  新建项目</a>
+              </li>
+            </ul>
 	        </li>
 	        <!-- Sheet Dropdown -->
 	        <li v-if="selectedProject != null && selectedSheet == null" class="dropdown sheet">
-	            <a data-toggle="modal" href="#createSheetModal">新建 Sheet</a>
+	            <a data-toggle="modal" href="#createSheetModal"  @click="openCreateSheetModal()">新建 Sheet</a>
 	        </li>
 	        <li v-if="selectedSheet" class="dropdown sheet"><a data-toggle="dropdown" class="dropdown-toggle" href="#">
 	                {{ selectedSheet.name }} <b class="caret"></b></a>
 	            <ul class="dropdown-menu">
-	                <li v-for="(key, sheet) in selectedProject.sheets" v-if="sheet.key != selectedSheet.key"><a href="#" @click="selectSheet(key, sheet)"> {{ sheet.name }}</a></li>
-	                <li><a data-toggle="modal" href="#createSheetModal">新建 Sheet</a></li>
+	                <li v-for="sheet in selectedProject.sheets" v-if="sheet.key != selectedSheet.key"><a href="#" @click="selectSheet(sheet)"> {{ sheet.name }}</a></li>
+	                <li><a data-toggle="modal" href="#createSheetModal" @click="openCreateSheetModal()">新建 Sheet</a></li>
 	            </ul>
 	        </li>
 	        <!-- Testcase Dropdown -->
 	        <li v-if="selectedSheet" class="dropdown sheet">
 	        	<a data-toggle="modal" href="#createTestCaseModal" @click="openCreateTestCaseModal()">
-	                新建功能说明</a>
+	            新建功能说明</a>
 	        </li>
 	        <!-- Testgroup Dropdown -->
 	        <!-- <li v-if="selectedProject != null && selectedTestGroups.length == 0" class="dropdown sheet">
@@ -190,7 +195,7 @@
 	                </form>
 	            </div>
 	            <div class="modal-footer">
-	                <button class="btn btn-primary" type="button" @click="storeTestCase">Save</button><button class="btn btn-default-outline" data-dismiss="modal" type="button">Close</button>
+	                <button class="btn btn-primary" type="button" @click="storeTestCase()">Save</button><button class="btn btn-default-outline" data-dismiss="modal" type="button">Close</button>
 	            </div>
 	        </div>
 	    </div>
@@ -252,18 +257,24 @@
 			projectsLoaded (projects) {
 		    if (_.isNull(projects)) return
 
-		    var self = this
-		    this.projects = []
-		    _.each(_.pairs(projects), function (item) {
-		    	var project = item[1]
-		    	project.key = item[0]
-		    	self.projects.push(project)
-		    })
+		    this.projects = this.convertObject2Array(projects)
 
-		    this.selectProject(this.getFirstItem(projects))
+		    if (_.isNull(this.selectedProject)) {
+		    	this.selectProject(this.getFirstItem(this.projects))
+		    }
 			}
 		},
 		methods: {
+			convertObject2Array (object) {
+				var data = []
+				_.each(_.pairs(object), function (property) {
+			  	var item = property[1]
+			  	item.key = property[0]
+			  	data.push(item)
+			  })
+
+			  return data
+			},
 			getFirstItem (items) {
 				if(_.isArray(items)) {
 					return _.first(items)
@@ -280,6 +291,7 @@
 					return _.last(items)
 				}
 
+				console.log(items)
 				var item = {}
 				const last = _.last(_.pairs(items))
 				item = last[1]
@@ -296,6 +308,12 @@
 				this.newTestCase.steps = ''
 				this.newTestCase.expected = ''
 			},
+			openCreateProjectModal () {
+				this.newProjet.name = ''
+			},
+			openCreateSheetModal () {
+				this.newSheet.name = ''
+			},
 			generateCode (name) {
 				var pinyinlite = require('pinyinlite')
 
@@ -306,34 +324,6 @@
 				})
 
 				return code + '_' + (_.keys(this.testcases).length + 1)
-			},
-			storeProject() {
-			  if (this.newProjet.name === '') return
-
-			  const projectsRef = this.store.child('projects')
-			  projectsRef.push(this.newProjet)
-
-			  $('#createProjectModal').modal('hide')
-
-			  this.selectProject(this.getLastItem(this.projects))
-			},
-			storeSheet() {
-			  if (this.newSheet.name === '') return
-
-			  var selectedProject = this.selectedProject
-			  const sheetsRef = this.store.child(`projects/${this.selectedProject.key}/sheets`)
-			  sheetsRef.push(this.newSheet)
-
-			  $('#createSheetModal').modal('hide')
-
-			  this.selectProject(selectedProject)
-
-			  var key = key
-			  _.extend(this.newSheet, {key: key})
-			  _.extend(this.selectedProject.sheets, {key: this.newSheet})
-			  
-			  var last = this.getLastItem(this.selectedProject.sheets)
-			  this.selectSheet(last.key, last)
 			},
 			selectProject(project) {
 				this.selectedProject = project
@@ -346,18 +336,14 @@
 			    return
 			  }
 
-			  var first = this.getFirstItem(this.selectedProject.sheets)
-			  this.selectSheet(first.key, first)
+			  this.selectedProject.sheets = _.isNull(this.selectedProject.sheets) ?
+			  	[] : this.convertObject2Array(this.selectedProject.sheets) 
 
-			  _.map(_.pairs(this.selectedProject.sheets), function (item) {
-			  	var sheet = item[1]
-			  	sheet.key = item[0]
-			  	item = sheet
-			  })
+			  // when switch project, auto switch to first sheet
+			  this.selectSheet(this.getFirstItem(this.selectedProject.sheets))
 			},
-			selectSheet(key, sheet) {
+			selectSheet(sheet) {
 				this.selectedSheet = sheet
-				this.selectedSheet.key = key
 
 			  // select first sheet
 			  if (this.selectedSheet === null || _.isUndefined(this.selectedSheet.testgroups)) {
@@ -369,7 +355,8 @@
 			  if (_.isUndefined(this.selectedSheet.testcases)) {
 			    this.testcases = []
 			  } else {
-			    this.testcases = this.selectedSheet.testcases
+			  	
+			    this.testcases = this.convertObject2Array(this.selectedSheet.testcases)
 
 			    this.buildAutoComplete(this.testcases)
 			  }
@@ -392,12 +379,43 @@
 		        name: "parent",
 		        local: parent
 		      })
-
-		      $(".child.typeahead").typeahead({
-		        name: "child",
-		        local: child
-		      })
 		    }
+			},
+			storeProject() {
+			  if (this.newProjet.name === '') return
+
+			  const projectsRef = this.store.child('projects')
+			  projectsRef.push(this.newProjet)
+
+			  $('#createProjectModal').modal('hide')
+
+			  this.selectProject(this.getLastItem(this.projects))
+			},
+			storeSheet() {
+			  if (this.newSheet.name === '') return
+
+			  var selectedProject = this.selectedProject
+			  const sheetsRef = this.store.child(`projects/${this.selectedProject.key}/sheets`)
+			  sheetsRef.push(this.newSheet)
+
+			  $('#createSheetModal').modal('hide')
+
+			  this.selectProject(selectedProject)
+
+			  _.extend(this.newSheet, {key: sheetsRef.key()})
+			  this.selectedProject.sheets.push(_.clone(this.newSheet))
+
+			  this.selectSheet(this.getLastItem(this.selectedProject.sheets))			  	
+			},
+			storeTestCase() {
+			  const testcasesRef = this.store.child(`projects/${this.selectedProject.key}/sheets/${this.selectedSheet.key}/testcases`)
+
+			  testcasesRef.push(this.newTestCase)
+
+			  $('#createTestCaseModal').modal('hide')
+
+			  _.extend(this.newTestCase, {key: testcasesRef.key()})
+			  this.testcases.push(_.clone(this.newTestCase))
 			},
 			storeTestGroup() {
 			  if (this.newTestGroup.name === '') return
@@ -419,18 +437,6 @@
 			  _.map(_.values(this.selectedSheet.testgroups), function (value) {
 			    self.selectedTestGroups.push(value)
 			  })
-			},
-			storeTestCase() {
-			  const testcasesRef = this.store.child(`projects/${this.selectedProject.key}/sheets/${this.selectedSheet.key}/testcases`)
-
-			  var selectedProject = this.selectedProject
-			  var selectedSheet = this.selectedSheet
-			  testcasesRef.push(this.newTestCase)
-
-			  $('#createTestCaseModal').modal('hide')
-
-			  this.selectProject(selectedProject)
-			  this.selectSheet(selectedSheet.key, selectedSheet)
 			}
 		}
 	}
